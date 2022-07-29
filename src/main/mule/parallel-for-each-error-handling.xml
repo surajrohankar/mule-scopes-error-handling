@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="6b35d48c-cc58-4d03-9f16-3ef76c03dc7e" >
+		<http:request-connection host="localhost" port="8087"/>
+	</http:request-config>
+	<flow name="parallel-for-each-error-handlingFlow"
+		doc:id="c61cdb80-67e2-47af-b0d4-2ad49edeecf9">
+		<http:listener doc:name="GET 8081/par-for-each"
+			doc:id="390c56e6-135d-4fdc-850b-dd08d0688d7c"
+			config-ref="HTTP_Listener_config" path="/par-for-each" />
+		<set-payload
+			value='#[["banana", "apple", "", "mango"]]'
+			doc:name='["banana", "apple", "","mango"]' doc:id="3a816921-d947-4764-9a8b-302f5e2141e7" />
+		<parallel-foreach doc:name="Parallel For Each"
+			doc:id="53e78655-709a-4b3e-aa4d-6f06ae12ca97" collection="#[payload]">
+			<try doc:name="Try" doc:id="4a0b1dab-ad64-4c8c-98a6-7949486b196b" >
+				<validation:is-not-blank-string doc:name="payload" doc:id="c2b6fc59-14e7-4d9c-b48f-c239933cff9b" />
+				<logger level="INFO" doc:name="LOG Payload" doc:id="93bb54c1-0274-4eec-9f40-430da8691485" message='#[output application/json&#10;---&#10;{&#10;	status: "Success",&#10;	responsePayload: payload&#10;}]' />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="7c6c7f3b-7154-4534-9bb2-b403a69bd06a" type="ANY">
+						<logger level="INFO" doc:name="LOG ERROR" doc:id="e161f6cf-c6dc-4b22-8b29-607f6b9a4eae" message='#[output application/json
+---
+{
+	
+	errorType: error.errorType.namespace ++ ":" ++ error.errorType.identifier,
+	error: error.description,
+	requestPayload: payload
+}]'/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</parallel-foreach>
+		<ee:transform doc:name="Parallel For Each Response" doc:id="4778950f-1a09-44fb-a0ef-f161bfa2f35a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="LOG INGO"
+			doc:id="60d95320-a4fd-4e36-9c02-7f39a0cd574f"
+			message="Process Completed" />
+	</flow>
+
+</mule>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="for-each-without-error-handling-flow" doc:id="d6bd6d2e-90d3-48b2-9eed-610e5f43135f">
+		<http:listener doc:name="GET 8081 /for-each" doc:id="225bcdbb-45ab-4f2c-8445-21f3f7b55528" config-ref="HTTP_Listener_config" path="/for-each" />
+		<set-payload value='#[output application/json
+---
+[
+  {
+    "fname": "John",
+    "lname": "D",
+    "phone": "12345"
+  },
+  {
+    "fname": "Kim",
+    "lname": "R",
+    "phone": null
+  },
+  {
+    "fname": "Kim",
+    "lname": "R",
+    "phone": "12345"
+  }
+]]' doc:name="JSON Payload" doc:id="109fe05a-425f-4d84-815f-f94aef164bcd" />
+		<foreach doc:name="For Each" doc:id="14399dba-1f0f-4eb7-aee9-c414aef90e38">
+			<validation:is-not-null doc:id="ba30ccf7-a935-4141-8597-07459907ee7b" value="#[payload.phone]" doc:name="payload.phone" />
+			<logger level="INFO" doc:name="LOG Payload" doc:id="d99c67fb-e0f1-4c49-af68-62dfbf671bea" message="#[payload]" />
+		</foreach>
+		<logger level="INFO" doc:name="LOG INGO" doc:id="df3f2ae5-26ec-43b1-88c5-1bd363b25bdf" message="Process Completed" />
+	</flow>
+	<flow name="for-each-with-error-handling-flow" doc:id="b16f6fcd-0589-49d5-9a58-c22b646bd47a">
+		<http:listener doc:name="GET 8081 /for-each-error" doc:id="e5164aa5-b2ab-49ac-a757-30c6e8c052e9" config-ref="HTTP_Listener_config" path="/for-each-error" />
+		<set-payload value='#[output application/json
+---
+[
+  {
+    "fname": "John",
+    "lname": "D",
+    "phone": "12345"
+  },
+  {
+    "fname": "Kim",
+    "lname": "R",
+    "phone": null
+  },
+  {
+    "fname": "Kim",
+    "lname": "R",
+    "phone": "12345"
+  }
+]]' doc:name="JSON Payload" doc:id="3d957b57-7f1f-4c77-8156-154bfc80ed03" />
+		<foreach doc:name="For Each" doc:id="8274d268-ae0d-4530-8a2e-3c613121cc26">
+			<try doc:name="Try" doc:id="46ac176f-17de-41c2-aba7-e02fcfb106ac" >
+				<validation:is-not-null doc:name="payload.phone" doc:id="3bbcaeef-5bbc-4f71-9b4a-637834f50aca" value="#[payload.phone]" />
+				<logger level="INFO" doc:name="LOG Payload" doc:id="35fd243a-2682-4372-9012-5795860ba2bf" message="#[payload]" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="046b7d0a-f746-4c98-a397-c610765316d8" >
+						<logger level="INFO" doc:name="LOG ERROR" doc:id="f70e0875-7b2a-4ffd-914a-49bebdf2b2d0" message="#[error.description]"/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+		<logger level="INFO" doc:name="LOG INGO" doc:id="8c644495-1dcd-4e12-87a7-dddd61c8ec30" message="Process Completed" />
+	</flow>
+</mule>
